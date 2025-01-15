@@ -2,11 +2,13 @@ import streamlit as st
 import pickle
 from sklearn.metrics.pairwise import linear_kernel
 import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 # Assume `data` is your DataFrame with a 'combined_features' column
-data = pd.read_csv('D:\\client\\project 8\\updatedjobdata.csv')  # Load your dataset
+data = pd.read_csv('D:\\client\\project 8\\job_recomd\\updatedjobdata.csv')  # Load your dataset
 tfidf = TfidfVectorizer()
 tfidf.fit_transform(data['combined_features'])  # Fit the TF-IDF vectorizer
 
@@ -48,3 +50,53 @@ if st.button("Find Jobs"):
     recommendations = recommend_jobs(user_input)
     st.write("Recommended Jobs:")
     st.dataframe(recommendations)
+
+    
+# Preprocess datetime columns
+data['publisheddate'] = pd.to_datetime(data['publisheddate'])
+data['year'] = data['publisheddate'].dt.year
+data['month'] = data['publisheddate'].dt.month
+
+# Streamlit UI
+st.title("Monitoring Workforce Dynamics")
+
+# Filter options
+st.sidebar.header("Filter Options")
+selected_year = st.sidebar.selectbox("Select Year", options=sorted(data['year'].unique()))
+selected_month = st.sidebar.selectbox("Select Month", options=sorted(data['month'].unique()))
+filtered_data = data[(data['year'] == selected_year) & (data['month'] == selected_month)]
+
+# Key Insights
+st.subheader("Key Insights")
+st.write(f"Showing data for {selected_year}-{selected_month:02d}")
+
+# 1. Job Categories Trend
+st.subheader("Job Categories Trend")
+category_counts = filtered_data['job_category'].value_counts()
+fig1, ax1 = plt.subplots()
+sns.barplot(x=category_counts.index, y=category_counts.values, ax=ax1)
+ax1.set_title("Popular Job Categories")
+ax1.set_xlabel("Job Category")
+ax1.set_ylabel("Number of Jobs")
+st.pyplot(fig1)
+
+# 2. Salary Trends
+st.subheader("Salary Trends")
+fig2, ax2 = plt.subplots()
+sns.lineplot(data=filtered_data, x='publisheddate', y='budget', hue='job_category', ax=ax2)
+ax2.set_title("Salary Trends Over Time")
+ax2.set_xlabel("Date")
+ax2.set_ylabel("Budget")
+st.pyplot(fig2)
+
+# 3. Job Type Distribution
+st.subheader("Job Type Distribution")
+job_type_counts = filtered_data['RemoteWork'].value_counts()
+fig3, ax3 = plt.subplots()
+ax3.pie(job_type_counts, labels=job_type_counts.index, autopct='%1.1f%%', startangle=140)
+ax3.set_title("Remote vs. On-Site Jobs")
+st.pyplot(fig3)
+
+# 4. Summary Table
+st.subheader("Summary Table")
+st.dataframe(filtered_data[['title', 'job_category', 'country', 'budget', 'RemoteWork']])
