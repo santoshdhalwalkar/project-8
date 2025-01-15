@@ -52,6 +52,9 @@ if st.button("Find Jobs"):
     st.dataframe(recommendations)
 
     
+
+  # Monitoring Workforce Dynamics  
+
 # Preprocess datetime columns
 data['publisheddate'] = pd.to_datetime(data['publisheddate'])
 data['year'] = data['publisheddate'].dt.year
